@@ -1,5 +1,5 @@
 from copy import copy
-
+import time
 import cv2
 import numpy as np
 from datetime import datetime
@@ -129,11 +129,26 @@ if __name__ == '__main__':
     global altura
     largura = len(img[0])
     altura = len(img)
+    #kernel = np.ones((5,5),np.float32)/25
     # PRE-PROCESSAMENTO DE IMAGEM
+    inicio = int(round(time.time() * 1000))
     img = mediana(img)
+    #img = cv2.medianBlur(img, 5)
+    fim = int(round(time.time() * 1000))
+    print("Mediana: ", (fim-inicio)," ms.")
+    inicio = int(round(time.time() * 1000))
     img = tiraFundo(img)
+    fim = int(round(time.time() * 1000))
+    print("Tira Fundo: ", (fim-inicio)," ms.")
+    inicio = int(round(time.time() * 1000))
     img = pintaMeio(img)
+    fim = int(round(time.time() * 1000))
+    print("Pinta Meio: ", (fim-inicio)," ms.")
+    inicio = int(round(time.time() * 1000))
     img = limiarizar(img)
+    #a, img = cv2.threshold(img,127,255,cv2.THRESH_BINARY)
+    fim = int(round(time.time() * 1000))
+    print("Limiarizar: ", (fim-inicio)," ms.")
     arquivo = "C:\\Users\\User\\Desktop\\Camera SlowMotion\\Materiais de Estudo\\Folhas\\{0}.jpg".format(datetime.now().strftime("%d%b%Hh%Mm"))
     cv2.imwrite(arquivo, img)
     cv2.imshow("Folha", img)
