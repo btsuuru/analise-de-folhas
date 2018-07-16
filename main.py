@@ -107,22 +107,44 @@ def pintaMeio(img):
             img[i][meio] = np.array([0,0,255])
     return img
 
-'''
-        while esquerda <= direita:
-            media = int((esquerda + direita)/2)
-            if img[i][esquerda] != np.array([0,0,0])
-            esquerda += 1
-            direita -= 1
-'''
+def achaDesnivel(img, x):
+    for i in range(largura):
+        if img[x][i] == np.array([0, 0, 255]):
+            return x,i
+
+def segueLinha(x, y):
+    temLinha = True
+    vermelho = np.array([0, 0, 255])
+    while temLinha:
+        if img[x+1][y-1] == vermelho:
+            x += 1
+            y -= 1
+        elif img[x+1][y] == vermelho:
+            x += 1
+        elif img[x+1][y+1] == vermelho:
+            x += 1
+            y += 1
+        else:
+            pass
+
+
+def achaLinha(img):
+    for i in range(largura):
+        for ii in range(altura):
+            if img[i][ii] == np.array([0, 0, 255]):
+                segueLinha(i, ii)
+
 
 def identificaBuraco(img):
     meio = int(altura / 2)
+    buraco = np.array([255, 255, 255])
     for i in range(largura):
         for ii in range(meio):
             pass
 
 
 if __name__ == '__main__':
+    #img = cv2.imread('C:\\Users\\User\\Desktop\\Camera SlowMotion\\Materiais de Estudo\\Folhas\\soja.png')
     img = cv2.imread('C:\\Users\\User\\Desktop\\Camera SlowMotion\\Materiais de Estudo\\Folhas\\amostra2.jpg')
     # define variaveis globais
     global largura
@@ -132,8 +154,8 @@ if __name__ == '__main__':
     #kernel = np.ones((5,5),np.float32)/25
     # PRE-PROCESSAMENTO DE IMAGEM
     inicio = int(round(time.time() * 1000))
-    img = mediana(img)
-    #img = cv2.medianBlur(img, 5)
+    #img = mediana(img)
+    img = cv2.medianBlur(img, 5)
     fim = int(round(time.time() * 1000))
     print("Mediana: ", (fim-inicio)," ms.")
     inicio = int(round(time.time() * 1000))
