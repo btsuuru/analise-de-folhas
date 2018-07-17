@@ -44,11 +44,12 @@ def mediana(img):
     for i in range(1, len(img)-1):
         for ii in range(1, len(img[i])-1):
             amostra = getSubImagem(img, i, ii)
-            auxiliar = list(map(getAvg, amostra))
+            #auxiliar = list(map(getAvg, amostra))
             for a in range(len(amostra)):
                 for b in range(a, len(amostra)):
-                    if auxiliar[a] > auxiliar[b]:
-                        swap(auxiliar, a, b)
+                    #if auxiliar[a] > auxiliar[b]:
+                    if amostra[a] > amostra[b]:
+                        #swap(auxiliar, a, b)
                         swap(amostra, a, b)
             img[i][ii] = amostra[int(len(amostra)/2)]
     return img
@@ -56,41 +57,32 @@ def mediana(img):
 def tiraFundo(img):
     # Escala minima para ser reconhecida e pintada.
     # OBS: escala maxima = [255, 255, 255]
-    corMinima = np.array([150, 150, 150])
+    corMinima = 150
     for i in range(largura):
         # Pinta de cima para baixo
         for ii in range(altura):
-            if img[ii][i][0] >= corMinima[0] and img[ii][i][1] >= corMinima[1] and img[ii][i][2] >= corMinima[2]:
-                img[ii][i] = np.array([0, 0, 0])
+            if img[ii][i] >= corMinima:
+                img[ii][i] = corFundo
             else:
                 break
         # Pinta de baixo para cima
         for ii in reversed(range(altura)):
-            if img[ii][i][0] >= corMinima[0] and img[ii][i][1] >= corMinima[1] and img[ii][i][2] >= corMinima[2]:
-                img[ii][i] = np.array([0, 0, 0])
+            if img[ii][i] >= corMinima:
+                img[ii][i] = corFundo
             else:
                 break
     return img
 
-'''
-def pintaMeio(img):
-    for i in range(altura):
-        img[i][int(largura / 2)] = np.array([0, 0, 255])
-    return img
-'''
-
 def limiarizar(img):
-    #corMinima = np.array([33, 70, 60])
-    corMinima = np.array([0, 23, 3])
-    #corMaxima = np.array([58, 109, 101])
-    corMaxima = np.array([116, 218, 202])
-    preto = np.array([0, 0, 0])
+    corMinima = 1
+    corMaxima = 170 # 145
+    preto = 0
     for i in range(altura):
         for ii in range(largura):
-            if corMinima[0] <= img[i][ii][0] <= corMaxima[0] and corMinima[1] <= img[i][ii][1] <= corMaxima[1] and corMinima[2] <= img[i][ii][2] <= corMaxima[2]:
-                img[i][ii] = np.array([127, 127, 127])
-            elif img[i][ii][0] != preto[0] and img[i][ii][1] != preto[1] and img[i][ii][2] != preto[2]:
-                img[i][ii] = np.array([0,255,0])
+            if corMinima <= img[i][ii] <= corMaxima:
+                img[i][ii] = corMeio
+            elif img[i][ii] != preto and not (corMinima <= img[i][ii] <= corMaxima):
+                img[i][ii] = corBuraco
     return img
 
 
@@ -98,79 +90,150 @@ def pintaMeio(img):
     for i in range(altura):
         direita = copy(largura-1)
         esquerda = 0
-        while(esquerda < largura and img[i][esquerda][0] == 0 and img[i][esquerda][1] == 0 and img[i][esquerda][2] == 0):
+        while esquerda < largura and img[i][esquerda] == 0:
             esquerda += 1
-        while(direita > 0 and img[i][direita][0] == 0 and img[i][direita][1] == 0 and img[i][direita][2] == 0):
+        while direita > 0 and img[i][direita] == 0:
             direita -= 1
         if esquerda < direita:
             meio = int((esquerda + direita)/2)
-            img[i][meio] = np.array([0,0,255])
+            img[i][meio] = corLinha
     return img
 
-def achaDesnivel(img, x):
-    for i in range(largura):
-        if img[x][i] == np.array([0, 0, 255]):
-            return x,i
+'''
+    ultimoX = copy(x)
+    ultimoY = copy(y)
+    for i in range(x+1, altura): 
+        for ii in range(largura):
+            if img[i][ii] == corLinha:
+                img[i][ii] = 100
+                dist = ultimoY - ii
+                print("Ponto Anterior", ultimoY)
+                print("Atual", ii)
+                print("Distancia", dist)
+                #ultimoY = ii
+                img[i][dist+ultimoY] = 20'''
 
-def segueLinha(x, y):
-    temLinha = True
-    vermelho = np.array([0, 0, 255])
-    while temLinha:
-        if img[x+1][y-1] == vermelho:
-            x += 1
+def distanciaDaBorda(img, x, y):
+    contador = 0
+    while True:
+        if img[x][y]!=0:
+            contador += 1
             y -= 1
-        elif img[x+1][y] == vermelho:
-            x += 1
-        elif img[x+1][y+1] == vermelho:
-            x += 1
-            y += 1
         else:
-            pass
+            return contador
 
+def refazLinha(img, x, y, bicoX, bicoY):
+    for i in range(bicoX, x, -1):
+        for ii in range(largura):
+            if corLinha-10 <= img[i][ii] <= corLinha+10:
+                img[i][ii]=255
+                db = distanciaDaBorda(img,i,ii)
+                distancia = bicoY - ii
+                img[i][bicoY+distancia]=100
+                db = distanciaDaBorda(img,i,ii)
+                print(db)
+                try:
+                    for iii in range((bicoY+distancia), (bicoY+db)):
+                        if img[i][iii]!=255:
+                            img[i][iii] = corBuraco
+                except:
+                    return img
+    return img
+
+def achaBico(img, x, y):
+    for i in range(altura-1, x, -1):
+        for ii in range(largura):
+            if corLinha-10 <= img[i][ii] <= corLinha+10:
+                img[i][ii] = 230
+                return refazLinha(img, x, y, i, ii)
+    return img
+
+def segueLinha(img, x, y):
+    if corLinha+10 >= img[x+1][y-2] >= corLinha-10:
+        img =  segueLinha(img, x+1, y-2)
+    elif corLinha+10 >= img[x+1][y-1] >= corLinha-10:
+        img = segueLinha(img, x+1, y-1)
+    elif corLinha+10 >= img[x+1][y] >= corLinha-10:
+        img = segueLinha(img, x+1, y)
+    elif corLinha+10 >= img[x+1][y+1] >= corLinha-10:
+        img = segueLinha(img, x+1, y+1)
+    elif corLinha+10 >= img[x+1][y+2] >= corLinha-10:
+        img = segueLinha(img, x+1, y+2)
+    else:
+        #img[x][y] = 120
+        img = achaBico(img, x, y)
+    return img
 
 def achaLinha(img):
-    for i in range(largura):
-        for ii in range(altura):
-            if img[i][ii] == np.array([0, 0, 255]):
-                segueLinha(i, ii)
-
-
-def identificaBuraco(img):
-    meio = int(altura / 2)
-    buraco = np.array([255, 255, 255])
-    for i in range(largura):
-        for ii in range(meio):
-            pass
-
+    for i in range(altura):
+        for ii in range(largura):
+            if img[i][ii] == corLinha:
+                img[i][ii]=100
+                img = segueLinha(img, i, ii)
+                return img
 
 if __name__ == '__main__':
-    #img = cv2.imread('C:\\Users\\User\\Desktop\\Camera SlowMotion\\Materiais de Estudo\\Folhas\\soja.png')
-    img = cv2.imread('C:\\Users\\User\\Desktop\\Camera SlowMotion\\Materiais de Estudo\\Folhas\\amostra2.jpg')
+    img = cv2.imread('C:\\Users\\User\\Desktop\\Camera SlowMotion\\Materiais de Estudo\\Folhas\\soja.png',0)
+    #img = cv2.imread('C:\\Users\\User\\Desktop\\Camera SlowMotion\\Materiais de Estudo\\Folhas\\amostra2.jpg',0)
     # define variaveis globais
-    global largura
-    global altura
+    global largura, altura, corFundo, corMeio, corBuraco, corLinha
     largura = len(img[0])
     altura = len(img)
+    corFundo = 0
+    corMeio = 255
+    corBuraco = 170
+    corLinha = 50
+    tempoTotal = 0
     #kernel = np.ones((5,5),np.float32)/25
-    # PRE-PROCESSAMENTO DE IMAGEM
+    ###############################
+    # PRE-PROCESSAMENTO DE IMAGEM #
+    ###############################
+    #
+    # APLICA FILTRO DE MEDIANA
+    #
     inicio = int(round(time.time() * 1000))
-    #img = mediana(img)
-    img = cv2.medianBlur(img, 5)
+    img = mediana(img)
+    #img = cv2.medianBlur(img, 5)
     fim = int(round(time.time() * 1000))
-    print("Mediana: ", (fim-inicio)," ms.")
+    tempoTotal += fim-inicio
+    print("Mediana: ", (fim-inicio),"ms.")
+    #
+    # TIRA BACKGROUND
+    #
     inicio = int(round(time.time() * 1000))
     img = tiraFundo(img)
     fim = int(round(time.time() * 1000))
-    print("Tira Fundo: ", (fim-inicio)," ms.")
-    inicio = int(round(time.time() * 1000))
-    img = pintaMeio(img)
-    fim = int(round(time.time() * 1000))
-    print("Pinta Meio: ", (fim-inicio)," ms.")
+    tempoTotal += fim-inicio
+    print("Tira Fundo: ", (fim-inicio), "ms.")
+    #
+    # LIMIARIZA IMAGEM
+    #
     inicio = int(round(time.time() * 1000))
     img = limiarizar(img)
     #a, img = cv2.threshold(img,127,255,cv2.THRESH_BINARY)
     fim = int(round(time.time() * 1000))
-    print("Limiarizar: ", (fim-inicio)," ms.")
+    tempoTotal += fim-inicio
+    print("Limiarizar: ", (fim-inicio),"ms.")
+    #
+    # DESENHA A LINHA NO MEIO DA FOLHA
+    #
+    inicio = int(round(time.time() * 1000))
+    img = pintaMeio(img)
+    fim = int(round(time.time() * 1000))
+    tempoTotal += fim-inicio
+    print("Pinta Meio: ", (fim-inicio),"ms.")
+    #
+    # PERCORRE A LINHA
+    #
+    inicio = int(round(time.time() * 1000))
+    img = achaLinha(img)
+    fim = int(round(time.time() * 1000))
+    tempoTotal += fim-inicio
+    print("Acha Linha: ", (fim-inicio),"ms.")
+    #
+    # FIM
+    #
+    print("Tempo total: ", round(tempoTotal/1000, 2), "s.")
     arquivo = "C:\\Users\\User\\Desktop\\Camera SlowMotion\\Materiais de Estudo\\Folhas\\{0}.jpg".format(datetime.now().strftime("%d%b%Hh%Mm"))
     cv2.imwrite(arquivo, img)
     cv2.imshow("Folha", img)
