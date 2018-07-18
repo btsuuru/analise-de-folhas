@@ -178,25 +178,34 @@ def temBuraco(img):
         return False
 
 def contaBuraco(img, x, y):
-    for i in range(x, largura):
-        for i in range(y, altura, 3):
-            img[i][ii] = corContado
+    qtd = 0
+    for i in range(x, altura-1):
+        for ii in range(y, largura-1, 3):
+            if img[i][ii] == corBuraco:
+                img[i][ii] = corContado
             subImg = getSubImagem(img, i, ii)
             if temBuraco(subImg):
-
-
-
+                qtd += int({subImg.count(x) for x in subImg if x == corBuraco}.pop())
+            else:
+                break
+        if not temBuraco(subImg):
+            break
+    return qtd
 
 def achaBuraco(img):
-    for i in range(largura):
-        for ii in range(altura):
+    buracos = []
+    qtd = 0
+    for i in range(altura):
+        for ii in range(largura):
             if img[i][ii] == corBuraco:
-                pass
+                buracos.append(contaBuraco(img, i, ii))
+                qtd+=1
+    return qtd, buracos
 
 if __name__ == '__main__':
     #img = cv2.imread('C:\\Users\\User\\Desktop\\Camera SlowMotion\\Materiais de Estudo\\Folhas\\soja.png', 0)
     img = cv2.imread('C:\\Users\\User\\Desktop\\Camera SlowMotion\\Materiais de Estudo\\Folhas\\amostra2.jpg', 0)
-    # define variaveis globais
+    # DEFINE VARIAVEIS GLOBAIS
     global largura, altura, corFundo, corMeio, corBuraco, corLinha, corContado
     largura = len(img[0])
     altura = len(img)
@@ -214,8 +223,8 @@ if __name__ == '__main__':
     # APLICA FILTRO DE MEDIANA
     #
     inicio = int(round(time.time() * 1000))
-    img = mediana(img)
-    #img = cv2.medianBlur(img, 5)
+    #img = mediana(img)
+    img = cv2.medianBlur(img, 5)
     fim = int(round(time.time() * 1000))
     tempoTotal += fim-inicio
     print("Mediana: ", (fim-inicio),"ms.")
@@ -252,6 +261,15 @@ if __name__ == '__main__':
     fim = int(round(time.time() * 1000))
     tempoTotal += fim-inicio
     print("Acha Linha: ", (fim-inicio),"ms.")
+    #
+    # ACHA BURACOS E CONTA
+    #
+    inicio = int(round(time.time() * 1000))
+    qtd, buracos = achaBuraco(img)
+    print(qtd, buracos)
+    fim = int(round(time.time() * 1000))
+    tempoTotal += fim-inicio
+    print("Conta Buracos: ", (fim-inicio),"ms.")
     #
     # FIM
     #
