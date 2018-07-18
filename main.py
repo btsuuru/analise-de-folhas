@@ -126,15 +126,14 @@ def refazLinha(img, x, y, bicoX, bicoY):
     for i in range(bicoX, x, -1):
         for ii in range(largura):
             if corLinha-10 <= img[i][ii] <= corLinha+10:
-                img[i][ii]=255
+                img[i][ii] = 255
                 db = distanciaDaBorda(img,i,ii)
                 distancia = bicoY - ii
-                img[i][bicoY+distancia]=100
+                img[i][bicoY+distancia] = 100
                 db = distanciaDaBorda(img,i,ii)
-                print(db)
                 try:
                     for iii in range((bicoY+distancia), (bicoY+db)):
-                        if img[i][iii]!=255:
+                        if img[i][iii] != 255:
                             img[i][iii] = corBuraco
                 except:
                     return img
@@ -172,17 +171,40 @@ def achaLinha(img):
                 img = segueLinha(img, i, ii)
                 return img
 
+def temBuraco(img):
+    if corBuraco in img:
+        return True
+    else:
+        return False
+
+def contaBuraco(img, x, y):
+    for i in range(x, largura):
+        for i in range(y, altura, 3):
+            img[i][ii] = corContado
+            subImg = getSubImagem(img, i, ii)
+            if temBuraco(subImg):
+
+
+
+
+def achaBuraco(img):
+    for i in range(largura):
+        for ii in range(altura):
+            if img[i][ii] == corBuraco:
+                pass
+
 if __name__ == '__main__':
-    img = cv2.imread('C:\\Users\\User\\Desktop\\Camera SlowMotion\\Materiais de Estudo\\Folhas\\soja.png',0)
-    #img = cv2.imread('C:\\Users\\User\\Desktop\\Camera SlowMotion\\Materiais de Estudo\\Folhas\\amostra2.jpg',0)
+    #img = cv2.imread('C:\\Users\\User\\Desktop\\Camera SlowMotion\\Materiais de Estudo\\Folhas\\soja.png', 0)
+    img = cv2.imread('C:\\Users\\User\\Desktop\\Camera SlowMotion\\Materiais de Estudo\\Folhas\\amostra2.jpg', 0)
     # define variaveis globais
-    global largura, altura, corFundo, corMeio, corBuraco, corLinha
+    global largura, altura, corFundo, corMeio, corBuraco, corLinha, corContado
     largura = len(img[0])
     altura = len(img)
     corFundo = 0
     corMeio = 255
     corBuraco = 170
     corLinha = 50
+    corContado = 230
     tempoTotal = 0
     #kernel = np.ones((5,5),np.float32)/25
     ###############################
