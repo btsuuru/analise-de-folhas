@@ -3,6 +3,7 @@ import time
 import cv2
 import numpy as np
 from datetime import datetime
+import sys
 
 #########################
 #   PRE-PROCESSAMENTO   #
@@ -155,7 +156,7 @@ def achaLinha(img):
     for i in range(altura):
         for ii in range(largura):
             if img[i][ii] == corLinha:
-                img[i][ii]=100
+                img[i][ii] = 100
                 img = segueLinha(img, i, ii)
                 return img
 
@@ -170,40 +171,100 @@ def temBuraco(img):
 
 def verificaN(img, x , y):
     if x > 0 and y < largura and img[x-1][y] == corBuraco:
+        img[x-1][y] = corContado
+        verificaE(img, x, y)
+        verificaW(img, x, y)
+        verificaN(img, x, y)
         return True
     return False
 
 def verificaS(img, x , y):
     if x > 0 and y < largura and img[x+1][y] == corBuraco:
+        img[x+1][y] = corContado
+        verificaE(img, x, y)
+        verificaW(img, x, y)
+        verificaS(img, x, y)
         return True
     return False
 
 def verificaW(img, x , y):
     if x > 0 and y < largura and img[x][y-1] == corBuraco:
+        img[x][y-1] = corContado
+        verificaE(img, x, y)
+        verificaN(img, x, y)
+        verificaS(img, x, y)
         return True
     return False
 
 def verificaE(img, x , y):
     if x > 0 and y < largura and img[x][y+1] == corBuraco:
+        img[x][y+1] = corContado
+        verificaN(img, x, y)
+        verificaS(img, x, y)
+        verificaW(img, x, y)
         return True
     return False
 
 def contaBuraco(img, x, y):
-    tamanho = 0
+    retorno = False
+    for i in range(x, altura-1):
+        for ii in range(y, largura-1):
+            verificaN(img, i, ii)
+            verificaS(img, i, ii)
+            verificaW(img, i, ii)
+            verificaE(img, i, ii)
+            retorno = True
+            break
+    return retorno
 
+def pinta(img, x, y, val):
+    if img[x][y] == corBuraco:
+        img[x][y] = corContado
+    else: return 0
+    if x < altura-1 and y < largura-1:
+        if img[x-1][y] != corContado: val += pinta(img, x-1, y, val)
+        if img[x+1][y] != corContado: val += pinta(img, x+1, y, val)
+        if img[x][y-1] != corContado: val += pinta(img, x, y-1, val)
+        if img[x][y+1] != corContado: val += pinta(img, x, y+1, val)
+    return val
+
+def porcentagemBuraco(img):
+    qtd = 0
+    for i in range(altura):
+        for ii in range(largura):
+            if img[i][ii] == corContado:
+                qtd += 1
+    return qtd
 
 def achaBuraco(img):
     # ACHA O PRIMEIRO PIXEL DO BURACO DA FOLHA
+    '''
     if temBuraco(img):
-        buracos = []
         qtd = 0
         for i in range(altura):
             for ii in range(largura):
                 if img[i][ii] == corBuraco:
-                    buracos.append(contaBuraco(img, i, ii))
-                    qtd+=1
+                    if contaBuraco(img, i, ii):
+                        qtd += 1
+        buracos = porcentagemBuraco(img)
         return qtd, buracos
     else: return 0, []
+    '''
+    if temBuraco(img):
+        qtd = 0
+        for i in range(altura):
+            for ii in range(largura):
+                if img[i][ii] == corBuraco:
+                    qtd = pinta(img, i, ii, 0)
+    return qtd, []
+
+def tamanhoFolha(img):
+    qtd = 0
+    for i in range(altura):
+        for ii in range(largura):
+            if img[i][ii] != 0:
+                qtd += 1
+    return qtd
 
 ########
 # MAIN #
@@ -225,7 +286,7 @@ if __name__ == '__main__':
     corMeio = 255
     corBuraco = 170
     corLinha = 50
-    corContado = 230
+    corContado = 20
     tempoTotal = 0
     #kernel = np.ones((5,5),np.float32)/25
     print('Altura:', altura)
@@ -280,7 +341,9 @@ if __name__ == '__main__':
     #
     inicio = int(round(time.time() * 1000))
     qtd, buracos = achaBuraco(img)
-    print(qtd, buracos)
+    folha = tamanhoFolha(img)
+    print("Buracos:", qtd)
+    print("Falta: ", round(buracos*100/folha, 2), '%')
     fim = int(round(time.time() * 1000))
     tempoTotal += fim-inicio
     print("Conta Buracos: ", (fim-inicio),"ms.")
@@ -288,7 +351,7 @@ if __name__ == '__main__':
     # FIM
     #
     print("Tempo total: ", round(tempoTotal/1000, 2), "s.")
-    arquivo = "C:\\Users\\User\\Desktop\\Camera SlowMotion\\Materiais de Estudo\\Folhas\\{0}.jpg".format(datetime.now().strftime("%d%b%Hh%Mm"))
+    arquivo = "C:\\Users\\User\\Desktop\\Camera SlowMotion\\Materiais de Estudo\\Folhas\\{0}.bmp".format(datetime.now().strftime("%d%b%Hh%Mm"))
     #######################################
     # ESCREVE ARQUIVO DA FOLHA PROCESSADA #
     #######################################
