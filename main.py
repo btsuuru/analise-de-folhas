@@ -4,30 +4,24 @@ import cv2
 import numpy as np
 from datetime import datetime
 
-#      Escruro   Claro
-# R    60        101
-# G    70        109
-# B    33        58
-
-# [linha : coluna]
-# [-1 : -1] [-1 : 0] [-1 : +1]
-# [0 : -1]  [0 : 0]  [0: +1]
-# [+1 : -1] [+1 : 0] [+1 : +1]
-
 #########################
 #   PRE-PROCESSAMENTO   #
 #########################
 
 def swap(vetor, p1, p2):
+    # TROCA POSICAO DE VALORES EM UM VETOR
+    # P1 POSICAO 1
+    # P2 POSICAO 2
     aux = vetor[p1]
     vetor[p1] = vetor[p2]
     vetor[p2] = aux
     return vetor
 
-def getAvg(obj):
-    return int(sum(obj)/2)
-
 def getSubImagem(img, i, ii):
+    # [linha : coluna]
+    # [-1 : -1] [-1 : 0] [-1 : +1]
+    # [0 : -1]  [0 : 0]  [0: +1]
+    # [+1 : -1] [+1 : 0] [+1 : +1]
     amostra = []
     amostra.append(img[i-1][ii-1])
     amostra.append(img[i-1][ii])
@@ -41,15 +35,13 @@ def getSubImagem(img, i, ii):
     return amostra
 
 def mediana(img):
+    # METODO PARA APLICAR FILTRO DE MEDIANA
     for i in range(1, len(img)-1):
         for ii in range(1, len(img[i])-1):
             amostra = getSubImagem(img, i, ii)
-            #auxiliar = list(map(getAvg, amostra))
             for a in range(len(amostra)):
                 for b in range(a, len(amostra)):
-                    #if auxiliar[a] > auxiliar[b]:
                     if amostra[a] > amostra[b]:
-                        #swap(auxiliar, a, b)
                         swap(amostra, a, b)
             img[i][ii] = amostra[int(len(amostra)/2)]
     return img
@@ -74,8 +66,12 @@ def tiraFundo(img):
     return img
 
 def limiarizar(img):
+    # LIMIARIZA IMAGEM MANUALMENTE
+    # COR MAIS ESCURA
     corMinima = 1
+    # COR MAIS CLARA
     corMaxima = 170 # 145
+    # PRETO ABSOLUTO
     preto = 0
     for i in range(altura):
         for ii in range(largura):
@@ -85,8 +81,12 @@ def limiarizar(img):
                 img[i][ii] = corBuraco
     return img
 
+####################
+# RECONSTROI FOLHA #
+####################
 
 def pintaMeio(img):
+    # DESENHA A LINHA NO CENTRO DA FOLHA
     for i in range(altura):
         direita = copy(largura-1)
         esquerda = 0
@@ -99,20 +99,6 @@ def pintaMeio(img):
             img[i][meio] = corLinha
     return img
 
-'''
-    ultimoX = copy(x)
-    ultimoY = copy(y)
-    for i in range(x+1, altura): 
-        for ii in range(largura):
-            if img[i][ii] == corLinha:
-                img[i][ii] = 100
-                dist = ultimoY - ii
-                print("Ponto Anterior", ultimoY)
-                print("Atual", ii)
-                print("Distancia", dist)
-                #ultimoY = ii
-                img[i][dist+ultimoY] = 20'''
-
 def distanciaDaBorda(img, x, y):
     contador = 0
     while True:
@@ -123,11 +109,11 @@ def distanciaDaBorda(img, x, y):
             return contador
 
 def refazLinha(img, x, y, bicoX, bicoY):
+    # INVERTE A LINHA TRACADA
     for i in range(bicoX, x, -1):
         for ii in range(largura):
             if corLinha-10 <= img[i][ii] <= corLinha+10:
                 img[i][ii] = 255
-                db = distanciaDaBorda(img,i,ii)
                 distancia = bicoY - ii
                 img[i][bicoY+distancia] = 100
                 db = distanciaDaBorda(img,i,ii)
@@ -140,6 +126,7 @@ def refazLinha(img, x, y, bicoX, bicoY):
     return img
 
 def achaBico(img, x, y):
+    # ENCONTRA A POSICAO DO ULTIMO PIXEL DA LINHA
     for i in range(altura-1, x, -1):
         for ii in range(largura):
             if corLinha-10 <= img[i][ii] <= corLinha+10:
@@ -148,6 +135,7 @@ def achaBico(img, x, y):
     return img
 
 def segueLinha(img, x, y):
+    # PERCORRE A LINHA ATE ENCONTRAR O ROMPIMENTO
     if corLinha+10 >= img[x+1][y-2] >= corLinha-10:
         img =  segueLinha(img, x+1, y-2)
     elif corLinha+10 >= img[x+1][y-1] >= corLinha-10:
@@ -159,11 +147,11 @@ def segueLinha(img, x, y):
     elif corLinha+10 >= img[x+1][y+2] >= corLinha-10:
         img = segueLinha(img, x+1, y+2)
     else:
-        #img[x][y] = 120
         img = achaBico(img, x, y)
     return img
 
 def achaLinha(img):
+    # ENCONTRA O PRIMEIRO PIXEL DA LINHA
     for i in range(altura):
         for ii in range(largura):
             if img[i][ii] == corLinha:
@@ -171,41 +159,65 @@ def achaLinha(img):
                 img = segueLinha(img, i, ii)
                 return img
 
+######################################################
+# CALCULA TAMANHOS E QUANTIDADES DE BURACOS NA FOLHA #
+######################################################
+
 def temBuraco(img):
-    if corBuraco in img:
+    # VERIFICA SE A IMAGEM POSSUI FUROS
+    if corBuraco in img: return True
+    else: return False
+
+def verificaN(img, x , y):
+    if x > 0 and y < largura and img[x-1][y] == corBuraco:
         return True
-    else:
-        return False
+    return False
+
+def verificaS(img, x , y):
+    if x > 0 and y < largura and img[x+1][y] == corBuraco:
+        return True
+    return False
+
+def verificaW(img, x , y):
+    if x > 0 and y < largura and img[x][y-1] == corBuraco:
+        return True
+    return False
+
+def verificaE(img, x , y):
+    if x > 0 and y < largura and img[x][y+1] == corBuraco:
+        return True
+    return False
 
 def contaBuraco(img, x, y):
-    qtd = 0
-    for i in range(x, altura-1):
-        for ii in range(y, largura-1, 3):
-            if img[i][ii] == corBuraco:
-                img[i][ii] = corContado
-            subImg = getSubImagem(img, i, ii)
-            if temBuraco(subImg):
-                qtd += int({subImg.count(x) for x in subImg if x == corBuraco}.pop())
-            else:
-                break
-        if not temBuraco(subImg):
-            break
-    return qtd
+    tamanho = 0
+
 
 def achaBuraco(img):
-    buracos = []
-    qtd = 0
-    for i in range(altura):
-        for ii in range(largura):
-            if img[i][ii] == corBuraco:
-                buracos.append(contaBuraco(img, i, ii))
-                qtd+=1
-    return qtd, buracos
+    # ACHA O PRIMEIRO PIXEL DO BURACO DA FOLHA
+    if temBuraco(img):
+        buracos = []
+        qtd = 0
+        for i in range(altura):
+            for ii in range(largura):
+                if img[i][ii] == corBuraco:
+                    buracos.append(contaBuraco(img, i, ii))
+                    qtd+=1
+        return qtd, buracos
+    else: return 0, []
+
+########
+# MAIN #
+########
 
 if __name__ == '__main__':
+    #############
+    # LE IMAGEM #
+    #############
     #img = cv2.imread('C:\\Users\\User\\Desktop\\Camera SlowMotion\\Materiais de Estudo\\Folhas\\soja.png', 0)
-    img = cv2.imread('C:\\Users\\User\\Desktop\\Camera SlowMotion\\Materiais de Estudo\\Folhas\\amostra2.jpg', 0)
-    # DEFINE VARIAVEIS GLOBAIS
+    img = cv2.imread('C:\\Users\\User\\Desktop\\Camera SlowMotion\\Materiais de Estudo\\Folhas\\amostra.jpg', 0)
+    ############################
+    # DEFINE VARIAVEIS GLOBAIS #
+    ############################
     global largura, altura, corFundo, corMeio, corBuraco, corLinha, corContado
     largura = len(img[0])
     altura = len(img)
@@ -216,6 +228,8 @@ if __name__ == '__main__':
     corContado = 230
     tempoTotal = 0
     #kernel = np.ones((5,5),np.float32)/25
+    print('Altura:', altura)
+    print('Largura:', largura)
     ###############################
     # PRE-PROCESSAMENTO DE IMAGEM #
     ###############################
@@ -275,7 +289,13 @@ if __name__ == '__main__':
     #
     print("Tempo total: ", round(tempoTotal/1000, 2), "s.")
     arquivo = "C:\\Users\\User\\Desktop\\Camera SlowMotion\\Materiais de Estudo\\Folhas\\{0}.jpg".format(datetime.now().strftime("%d%b%Hh%Mm"))
+    #######################################
+    # ESCREVE ARQUIVO DA FOLHA PROCESSADA #
+    #######################################
     cv2.imwrite(arquivo, img)
+    #########################
+    # MOSTRA IMAGEM NA TELA #
+    #########################
     cv2.imshow("Folha", img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
